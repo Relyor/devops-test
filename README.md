@@ -1,6 +1,7 @@
 # devops-test
 
 export AWS_ACCESS_KEY_ID=
+
 export AWS_SECRET_ACCESS_KEY=
 
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 992382767287.dkr.ecr.us-east-1.amazonaws.com/my-app-repo
