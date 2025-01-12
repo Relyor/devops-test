@@ -6,11 +6,12 @@ data "template_file" "web_app" {
   template = file("./templates/fargate.tpl")
 
   vars = {
-    image_path      = var.image_path
+    image_path     = var.image_path
     app_port       = var.port
     fargate_cpu    = var.fargate_cpu
     fargate_memory = var.fargate_memory
     aws_region     = var.aws_region
+    container_name = var.container_name
   }
 }
 
@@ -39,7 +40,7 @@ resource "aws_ecs_service" "this" {
 
   load_balancer {
     target_group_arn = aws_alb_target_group.this.id
-    container_name   = "web-app"
+    container_name   = var.container_name
     container_port   = var.port
   }
 

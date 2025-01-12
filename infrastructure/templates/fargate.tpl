@@ -1,6 +1,6 @@
 [
   {
-    "name": "web-app",
+    "name": "${container_name}",
     "image": "${image_path}",
     "cpu": ${fargate_cpu},
     "memory": ${fargate_memory},
@@ -8,7 +8,7 @@
     "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/web-app",
+          "awslogs-group": "/ecs/${container_name}",
           "awslogs-region": "${aws_region}",
           "awslogs-stream-prefix": "ecs"
         }

@@ -15,6 +15,10 @@ variable "image_path" {
   default = "471112661735.dkr.ecr.us-east-1.amazonaws.com/node-web:1.0.0"
 }
 
+variable "container_name" {
+  default = "web-app"
+}
+
 variable "health_check_path" {
   default = "/"
 }
