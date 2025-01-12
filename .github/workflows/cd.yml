@@ -1,0 +1,95 @@
+---
+name: "ECS-deployment"
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  cd:
+    name: "Deployment"
+    runs-on: "ubuntu-latest"
+    steps:
+    - name: "Checkout Code"
+      uses: "actions/checkout@v2"
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.10.4"
+        terraform_wrapper: false
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - run: terraform init
+      working-directory: ./infrastructure
+
+    - id: apply
+      working-directory: ./infrastructure
+      run: terraform apply --auto-approve
+
+    - name: Get version from package.json
+      id: image_tag
+      run: |
+        TAG=$(jq -r '.version' package.json)
+        echo "Tag: $TAG"
+        echo "TAG=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Setup variables
+      id: tf_setup
+      working-directory: ./infrastructure
+      run: |
+        echo "ECR_REPOSITORY_URL=$(terraform output --raw ecr_repository_url)" >> $GITHUB_OUTPUT
+        echo "TASK_DEFINITION_FAMILY=$(terraform output --raw task_definition_family)" >> $GITHUB_OUTPUT
+        echo "CONTAINER_NAME=$(terraform output --raw container_name)" >> $GITHUB_OUTPUT
+        echo "SERVICE_NAME=$(terraform output --raw ecs_service)" >> $GITHUB_OUTPUT
+        echo "CLUSTER_NAME=$(terraform output --raw ecs_cluster)" >> $GITHUB_OUTPUT
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ steps.tf_setup.outputs.ECR_REPOSITORY_URL }}
+        IMAGE_TAG: ${{ steps.image_tag.outputs.TAG }}
+      run: |
+        docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REPOSITORY:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REPOSITORY:$IMAGE_TAG"
+
+    - name: Download task definition
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ steps.tf_setup.outputs.TASK_DEFINITION_FAMILY }} \
+        --query taskDefinition > task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: ${{ steps.tf_setup.outputs.CONTAINER_NAME }}
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ steps.tf_setup.outputs.SERVICE_NAME }}
+        cluster: ${{ steps.tf_setup.outputs.CLUSTER_NAME }}
+        wait-for-service-stability: true

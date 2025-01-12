@@ -1,0 +1,34 @@
+name: Upload-to-S3
+
+on:
+  workflow_run:
+    workflows: ["ECS-deployment"]
+    types:
+    - completed
+
+jobs:
+  artifact_upload:
+    name: "Upload"
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: "ubuntu-latest"
+    steps:
+    - name: Get version from package.json
+      id: image_tag
+      run: |
+        TAG=$(jq -r '.version' package.json)
+        echo "Tag: $TAG"
+        echo "TAG=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Archive app
+      run: |
+        zip web-app-${{ steps.image_tag.outputs.TAG }}.zip index.js package.json package-lock.json
+
+    - name: Upload to S3
+      uses: hkusu/s3-upload-action@v2
+      id: upload # specify some ID for use in subsequent steps
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+        aws-bucket: ${{ secrets.AWS_BUCKET }}
+        file-path: 'web-app-${{ steps.image_tag.outputs.TAG }}.zip'
