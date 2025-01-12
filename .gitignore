@@ -131,4 +131,4 @@ dist
 
 # terraform
 .terraform
-terraform.tfstate*
+# terraform.tfstate*

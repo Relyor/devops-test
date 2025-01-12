@@ -1,4 +1,4 @@
-name: Deploy for preview
+name: Upload-to-S3
 
 on:
   workflow_run:
@@ -7,32 +7,28 @@ on:
     - completed
 
 jobs:
-  preview:
-    runs-on: ubuntu-latest
+  artifact_upload:
+    name: "Upload"
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@master
-      - uses: chrnorm/deployment-action@releases/v1
-        name: Create GitHub deployment
-        id: test
-        with:
-          token: ${{ secrets.GITHUB_TOKEN}}
-          description: 'Preview my app'
-          environment: preview
+    - name: Get version from package.json
+      id: image_tag
+      run: |
+        TAG=$(jq -r '.version' package.json)
+        echo "Tag: $TAG"
+        echo "TAG=$TAG" >> $GITHUB_OUTPUT
 
-      - uses: shallwefootball/s3-upload-action@master
-        name: Upload S3
-        id: S3
-        with:
-          aws_key_id: ${{ secrets.AWS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
-          aws_bucket: ${{ secrets.AWS_BUCKET }}
-          source_dir: 'static'
+    - name: Archive app
+      run: |
+        zip web-app-${{ steps.image_tag.outputs.TAG }}.zip index.js package.json package-lock.json
 
-      - name: Update deployment status (success)
-        if: success()
-        uses: chrnorm/deployment-status@releases/v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          target_url: https://aws-bucket.s3.ap-northeast-2.amazonaws.com/${{steps.S3.outputs.object_key}}/index.html
-          state: 'success'
-          deployment_id: ${{ steps.test.outputs.deployment_id }}
+    - name: Upload to S3
+      uses: hkusu/s3-upload-action@v2
+      id: upload # specify some ID for use in subsequent steps
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+        aws-bucket: ${{ secrets.AWS_BUCKET }}
+        file-path: 'web-app-${{ steps.image_tag.outputs.TAG }}.zip'
