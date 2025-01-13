@@ -63,14 +63,6 @@ jobs:
         # commit_author:
         # commit_options:
 
-    # - name: Push version bump to repository
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   run: |
-    #     git config --global user.name "github-actions[bot]"
-    #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
-    #     git push origin ${{ steps.extract_branch.outputs.branch }}
-
     - name: Get version from package.json
       id: image_tag
       run: |
