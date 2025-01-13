@@ -14,6 +14,10 @@ jobs:
     - name: "Checkout Code"
       uses: "actions/checkout@v2"
 
+    - name: Extract branch name
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
@@ -33,6 +37,39 @@ jobs:
     - id: apply
       working-directory: ./infrastructure
       run: terraform apply --auto-approve
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Bump version based on commit message
+      id: bump_version
+      run: |
+        if [[ "${{ steps.extract_branch.outputs.branch }}" == *"hotfix"* ]]; then
+          npm version patch --no-git-tag-version -f
+        else
+          npm version minor --no-git-tag-version -f
+        fi
+
+    - uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "chore: Bump node version"
+        # commit_user_name:
+        # commit_user_email:
+        # commit_author:
+        # commit_options:
+
+    # - name: Push version bump to repository
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: |
+    #     git config --global user.name "github-actions[bot]"
+    #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+    #     git push origin ${{ steps.extract_branch.outputs.branch }}
 
     - name: Get version from package.json
       id: image_tag
