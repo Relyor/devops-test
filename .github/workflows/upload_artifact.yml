@@ -12,6 +12,31 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: "ubuntu-latest"
     steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Bump version based on commit message
+      id: bump_version
+      run: |
+        if [[ "${GITHUB_REF##*/}" == hotfix* ]]; then
+          npm version patch
+        else
+          npm version minor
+        fi
+
+    - name: Push version bump to repository
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git push origin main
+
     - name: Get version from package.json
       id: image_tag
       run: |
