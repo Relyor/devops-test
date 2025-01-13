@@ -1,6 +1,7 @@
 name: Upload-to-S3
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["ECS-deployment"]
     types:
@@ -26,11 +27,13 @@ jobs:
       run: |
         zip web-app-${{ steps.image_tag.outputs.TAG }}.zip index.js package.json package-lock.json
 
-    - name: Upload to S3
-      uses: shallwefootball/s3-upload-action@master
-      id: upload # specify some ID for use in subsequent steps
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
       with:
-        aws_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws_bucket: 'buying-labs-artifacts.s3.us-east-1.amazonaws.com'
-        source_dir: 'web-app-${{ steps.image_tag.outputs.TAG }}.zip'
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Upload file to S3
+      run: |
+        aws s3 cp web-app-${{ steps.image_tag.outputs.TAG }}.zip s3://buying-labs-artifacts/
