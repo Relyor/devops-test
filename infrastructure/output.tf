@@ -25,3 +25,8 @@ output "container_name" {
   description = "The name of the ECS container"
   value = var.container_name
 }
+
+output "bucket_endpoint" {
+  description = "The endpoint of the bucket"
+  value = aws_s3_bucket.this.bucket_regional_domain_name
+}

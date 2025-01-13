@@ -1,0 +1,59 @@
+---
+name: Create Release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    permissions:
+      contents: write # create tag
+      actions: write # create release
+      pull-requests: write # comment PR
+
+    steps:
+      - name: Comment PR on the about-to-be-created tag
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ⏳⏳⏳
+            This PR is being merged to `${{github.ref_name}}`....
+            Wait a few moments for the generated tag....
+          comment_tag: tag_generated
+          pr_number: ${{ github.event.number }}
+          mode: upsert
+
+      - name: Checkout branch
+        uses: actions/checkout@v2
+
+      - name: Get version from package.json
+        id: image_tag
+        run: |
+          TAG=$(jq -r '.version' package.json)
+          echo "Tag: $TAG"
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.image_tag.outputs.TAG }}
+          release_name: Release ${{ steps.image_tag.outputs.TAG }}
+
+      - name: Update PR commment with the created tag
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            🎉🎉🎉
+            This PR was merged to `${{ github.ref_name }}`.
+            A new tag is ready: `${{ steps.image_tag.outputs.TAG }}`
+          comment_tag: tag_generated
+          pr_number: ${{ github.event.number }}
+          mode: upsert
