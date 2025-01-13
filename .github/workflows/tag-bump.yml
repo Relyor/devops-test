@@ -1,0 +1,59 @@
+---
+name: Create Release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    permissions:
+      contents: write # create tag
+      actions: write # create release
+      pull-requests: write # comment PR
+
+    steps:
+      - name: Comment PR on the about-to-be-created tag
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ⏳⏳⏳
+            This PR is being merged to `${{github.ref_name}}`....
+            Wait a few moments for the generated tag....
+          comment_tag: tag_generated
+          pr_number: ${{ github.event.number }}
+          mode: upsert
+
+      - name: Checkout branch
+        uses: actions/checkout@v2
+
+      # - name: Generate release tag
+      #   id: generate_release_tag
+      #   uses: alexvingg/next-release-tag@v1.0.4
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     tag_prefix: ""
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.generate_release_tag.outputs.release_tag }}
+          release_name: Release ${{ steps.generate_release_tag.outputs.release_tag }}
+
+      - name: Update PR commment with the created tag
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            🎉🎉🎉
+            This PR was merged to `${{github.ref_name}}`.
+            A new tag is ready: `${{ steps.generate_release_tag.outputs.release_tag }}`
+          comment_tag: tag_generated
+          pr_number: ${{ github.event.number }}
+          mode: upsert
