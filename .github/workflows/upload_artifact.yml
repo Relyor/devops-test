@@ -2,10 +2,15 @@ name: Upload-to-S3
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["ECS-deployment"]
+  pull_request:
     types:
-    - completed
+      - closed
+    branches:
+      - master
+  # workflow_run:
+  #   workflows: ["ECS-deployment"]
+  #   types:
+  #   - completed
 
 jobs:
   artifact_upload:
