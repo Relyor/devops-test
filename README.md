@@ -45,15 +45,18 @@ docker push <repo_endpoint>:<tag>
 ```
 
 ## How to manually run terraform
-1.```
+1. Initialize terraform
+```
 terraform init
 ```
 
-2.```
+2. Generate the plan
+```
 terraform plan -out=tfplan.out
 ```
 
-3.```
+3. Apply previously generated plan
+```
 terraform apply tfplan.out
 ```
 
