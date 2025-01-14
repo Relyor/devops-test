@@ -7,6 +7,7 @@ on:
       - closed
     branches:
       - master
+  ### TODO: Pass the branch name from ECS-deployment
   # workflow_run:
   #   workflows: ["ECS-deployment"]
   #   types:
