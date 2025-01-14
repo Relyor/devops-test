@@ -49,3 +49,9 @@ The entire terraform code is in the **infrastructure** directory. This is just a
 
 > [!CAUTION]
 > The terraform state file should never be on github, publicly available. Always use another storage (e.g. S3) and a locking mechanism (DynamoDB)
+
+The tag-bump Github workflow automatically creates a tag based on the version from the package.json file
+
+The tf-docs Github workflow automatically creates documentation for terraform
+
+The upload-artifact Github workflow uploads the source code in a zip archive to an S3 bucket
