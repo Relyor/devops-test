@@ -43,6 +43,20 @@ docker build -f Dockerfile -t <repo_endpoint>:<tag> .
 ```
 docker push <repo_endpoint>:<tag>
 ```
+
+## How to manually run terraform
+1.```
+terraform init
+```
+
+2.```
+terraform plan -out=tfplan.out
+```
+
+3.```
+terraform apply tfplan.out
+```
+
 # Description
 
 The entire terraform code is in the **infrastructure** directory. This is just a mockup, thus the terraform state is present on the github repository.
