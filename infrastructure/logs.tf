@@ -1,3 +1,4 @@
+### Logs for the ECS service
 resource "aws_cloudwatch_log_group" "cb_log_group" {
   name              = "/ecs/${var.container_name}"
   retention_in_days = 30

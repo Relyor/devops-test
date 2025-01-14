@@ -1,3 +1,4 @@
+# Create VPC for the ECS services
 resource "aws_vpc" "ecs_vpc" {
   cidr_block = var.cidr
   enable_dns_hostnames = true
