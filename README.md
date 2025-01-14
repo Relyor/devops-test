@@ -11,3 +11,28 @@ docker build -f Dockerfile -t 471112661735.dkr.ecr.us-east-1.amazonaws.com/node-
 
 # Push the image to ECR
 docker push 471112661735.dkr.ecr.us-east-1.amazonaws.com/node-web:1.0.0
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+No requirements.
+
+## Providers
+
+No providers.
+
+## Modules
+
+No modules.
+
+## Resources
+
+No resources.
+
+## Inputs
+
+No inputs.
+
+## Outputs
+
+No outputs.
+<!-- END_TF_DOCS -->
