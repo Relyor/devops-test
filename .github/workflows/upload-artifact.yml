@@ -7,6 +7,7 @@ on:
       - closed
     branches:
       - master
+  ### TODO: Pass the branch name from ECS-deployment
   # workflow_run:
   #   workflows: ["ECS-deployment"]
   #   types:
@@ -41,4 +42,4 @@ jobs:
 
     - name: Upload file to S3
       run: |
-        aws s3 cp web-app-${{ steps.image_tag.outputs.TAG }}.zip s3://buying-labs-artifacts/
+        aws s3 cp web-app-${{ steps.image_tag.outputs.TAG }}.zip s3://${{ secrets.AWS_BUCKET_NAME }}/
